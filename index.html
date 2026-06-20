@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Dev Stack Picker — AI 开发工具选型向导</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#0a0e1a;--bg-card:#111827;--bg-hover:#1a2332;--border:#1e293b;--text:#e2e8f0;--text-muted:#94a3b8;--text-dim:#64748b;--green:#10b981;--amber:#f59e0b;--purple:#8b5cf6;--cyan:#06b6d4;--pink:#ec4899;--red:#ef4444}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .container{max-width:1280px;margin:0 auto;padding:0 24px}
+    header{border-bottom:1px solid var(--border);background:rgba(10,14,26,0.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 0;gap:16px;flex-wrap:wrap}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .logo-text h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .logo-text p{font-size:12px;color:var(--text-dim);margin-top:2px}
+    .mode-toggle{display:flex;gap:4px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+    .mode-btn{padding:8px 16px;background:var(--bg-card);color:var(--text-muted);border:none;cursor:pointer;font-size:13px;font-family:inherit}
+    .mode-btn.active{background:var(--cyan);color:white}
+
+    /* Wizard Mode */
+    .wizard{max-width:720px;margin:60px auto;padding:0 24px}
+    .wizard-progress{display:flex;gap:8px;margin-bottom:40px}
+    .wizard-step{flex:1;height:4px;border-radius:2px;background:var(--border);transition:all 0.4s}
+    .wizard-step.active{background:var(--cyan)}
+    .wizard-step.done{background:var(--green)}
+    .wizard-question{animation:fadeIn 0.4s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .wizard-q-title{font-size:28px;font-weight:700;margin-bottom:8px;line-height:1.3}
+    .wizard-q-desc{font-size:15px;color:var(--text-muted);margin-bottom:32px}
+    .wizard-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+    .wizard-option{background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.2s;text-align:center}
+    .wizard-option:hover{border-color:var(--cyan);background:var(--bg-hover)}
+    .wizard-option.selected{border-color:var(--cyan);background:rgba(6,182,212,0.1)}
+    .wizard-option-icon{font-size:32px;margin-bottom:8px}
+    .wizard-option-label{font-size:14px;font-weight:600;margin-bottom:4px}
+    .wizard-option-desc{font-size:12px;color:var(--text-dim)}
+    .wizard-nav{display:flex;justify-content:space-between;margin-top:40px}
+    .wizard-btn{padding:12px 28px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:all 0.2s}
+    .wizard-btn-back{background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border)}
+    .wizard-btn-back:hover{border-color:var(--cyan);color:var(--text)}
+    .wizard-btn-next{background:var(--cyan);color:white}
+    .wizard-btn-next:hover{background:#0891b2}
+    .wizard-btn-next:disabled{background:var(--text-dim);cursor:not-allowed}
+
+    /* Results */
+    .results{max-width:960px;margin:40px auto;padding:0 24px;animation:fadeIn 0.5s}
+    .results-header{text-align:center;margin-bottom:40px}
+    .results-header h2{font-size:28px;font-weight:700;margin-bottom:8px}
+    .results-header p{color:var(--text-muted);font-size:15px}
+    .result-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px;transition:all 0.2s;position:relative;overflow:hidden}
+    .result-card:hover{border-color:var(--cyan);transform:translateY(-2px)}
+    .result-rank{position:absolute;top:0;left:0;background:linear-gradient(135deg,var(--cyan),var(--purple));color:white;font-weight:800;font-size:16px;padding:8px 16px;border-radius:0 0 12px 0}
+    .result-rank.gold{background:linear-gradient(135deg,#f59e0b,#f97316)}
+    .result-rank.silver{background:linear-gradient(135deg,#94a3b8,#64748b)}
+    .result-rank.bronze{background:linear-gradient(135deg,#cd7f32,#a0522d)}
+    .result-main{display:flex;gap:24px;align-items:flex-start;margin-top:16px}
+    .result-icon{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;background:var(--bg-hover);flex-shrink:0}
+    .result-info{flex:1}
+    .result-name{font-size:20px;font-weight:700;margin-bottom:4px}
+    .result-company{font-size:13px;color:var(--text-dim);margin-bottom:8px}
+    .result-desc{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:12px}
+    .result-score{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+    .score-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+    .score-bar-bg{width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+    .score-bar{height:100%;border-radius:3px;transition:width 0.8s ease}
+    .score-label{font-size:11px;color:var(--text-dim)}
+    .score-value{font-size:12px;font-weight:600;color:var(--cyan)}
+    .result-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .result-tag{font-size:11px;padding:3px 10px;border-radius:6px;background:var(--bg-hover);color:var(--text-dim)}
+    .result-match{font-size:13px;font-weight:600;color:var(--green);margin-top:8px}
+    .result-price{font-size:13px;color:var(--amber);margin-top:4px}
+    .restart-btn{display:block;margin:40px auto;padding:14px 32px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;font-size:14px;font-family:inherit}
+    .restart-btn:hover{border-color:var(--cyan)}
+
+    /* Browse Mode */
+    .browse{padding-bottom:40px}
+    .browse-controls{display:flex;gap:16px;padding:24px 0;align-items:center;flex-wrap:wrap}
+    .browse-search{flex:1;min-width:260px;position:relative}
+    .browse-search input{width:100%;padding:12px 16px 12px 44px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text);font-size:14px;font-family:inherit}
+    .browse-search input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(6,182,212,0.15)}
+    .browse-search::before{content:"🔍";position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:14px}
+    .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+    .filter-btn{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-muted);font-size:13px;cursor:pointer;transition:all 0.2s;font-family:inherit}
+    .filter-btn:hover{border-color:var(--cyan);color:var(--text)}
+    .filter-btn.active{background:var(--cyan);color:white;border-color:var(--cyan)}
+    .tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+    .tool-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;transition:all 0.2s;cursor:pointer}
+    .tool-card:hover{border-color:var(--cyan);transform:translateY(-2px)}
+    .tool-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .tool-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg-hover)}
+    .tool-name{font-size:16px;font-weight:600}
+    .tool-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+    .badge-free{background:rgba(16,185,129,0.15);color:var(--green)}
+    .badge-paid{background:rgba(245,158,11,0.15);color:var(--amber)}
+    .badge-freemium{background:rgba(139,92,246,0.15);color:var(--purple)}
+    .tool-desc{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
+    .tool-scores{display:flex;gap:12px;flex-wrap:wrap}
+    .mini-score{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim)}
+    .mini-bar-bg{width:48px;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+    .mini-bar{height:100%;border-radius:2px}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity 0.3s}
+    .modal-overlay.show{opacity:1;pointer-events:all}
+    .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;max-width:640px;width:90%;max-height:85vh;overflow-y:auto;padding:32px;transform:translateY(20px);transition:transform 0.3s}
+    .modal-overlay.show .modal{transform:translateY(0)}
+    .modal-close{float:right;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .modal-name{font-size:22px;font-weight:700;margin-bottom:4px}
+    .modal-company{font-size:13px;color:var(--text-dim);margin-bottom:16px}
+    .modal-section{margin-top:20px}
+    .modal-section h4{font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+    .modal-scores{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .modal-score-item{display:flex;justify-content:space-between;align-items:center}
+    .modal-score-label{font-size:13px;color:var(--text-muted)}
+    .modal-score-bar-bg{width:100px;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+    .modal-score-bar{height:100%;border-radius:4px}
+    .modal-list{list-style:none}
+    .modal-list li{padding:6px 0;font-size:14px;color:var(--text-muted);display:flex;align-items:flex-start;gap:8px}
+    .modal-list li::before{content:"✦";color:var(--cyan);flex-shrink:0}
+    .no-results{text-align:center;padding:60px 20px;color:var(--text-dim)}
+    footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color:var(--text-dim);font-size:12px}
+    footer a{color:var(--cyan);text-decoration:none}
+    @media(max-width:640px){.wizard-options{grid-template-columns:1fr}.tools-grid{grid-template-columns:1fr}.modal-scores{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header><div class="container"><div class="header-inner">
+    <div class="logo"><div class="logo-icon">🧭</div><div class="logo-text"><h1>AI Dev Stack Picker</h1><p>AI 开发工具选型向导 · 找到最适合你的 AI 编程搭档</p></div></div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="wizard" id="modeWizard">🧙 向导模式</button>
+      <button class="mode-btn" data-mode="browse" id="modeBrowse">📋 浏览模式</button>
+    </div>
+  </div></div></header>
+
+  <div class="container">
+    <div id="wizardView"><div class="wizard" id="wizard"></div></div>
+    <div id="browseView" style="display:none"><div class="browse" id="browse"></div></div>
+  </div>
+
+  <footer><div class="container"><p>AI Dev Stack Picker · 数据截至 2026-06-20 · 由 <a href="https://github.com/seanliii">🦐 小蓝虾</a> 维护</p></div></footer>
+  <div class="modal-overlay" id="modalOverlay"><div class="modal" id="modal"></div></div>
+
+  <script>
+    const tools = [
+      { id:"cursor", name:"Cursor", company:"Anysphere", icon:"⚡", desc:"AI-first 代码编辑器，基于 VS Code 魔改，内置 Agent 模式支持多文件编辑和终端操作。2026 年开发者最爱工具之一。", pricing:"freemium", price:"$20/月 Pro · $40/月 Business", scores:{codeComplete:95,refactor:92,debug:88,multiLang:90,context:95,agent:90,speed:85,ecosystem:88}, tags:["IDE","Agent","多文件","VS Code 魔改"], pros:["Agent 模式自动多文件编辑","上下文理解极强（整个 Codebase）","UI/UX 极其流畅","内置终端 Agent","社区生态丰富"], cons:["Pro 价格较高","大项目偶尔卡顿","闭源不可自托管"], bestFor:["全栈开发","快速原型","个人/小团队"], category:"IDE" },
+      { id:"claude-code", name:"Claude Code", company:"Anthropic", icon:"🟠", desc:"Anthropic 官方 CLI 编程工具，终端原生体验，支持多 Agent 编排、MCP 插件和超长上下文理解。", pricing:"paid", price:"按 Token 计费 · Claude Max $200/月", scores:{codeComplete:90,refactor:95,debug:92,multiLang:88,context:98,agent:96,speed:80,ecosystem:85}, tags:["CLI","Agent","MCP","长上下文"], pros:["200K Token 超长上下文","多 Agent 并行编排","MCP 插件生态丰富","代码重构能力最强","终端原生无缝集成"], cons:["CLI 门槛较高","需要 API Key 或 Max 订阅","非 IDE 体验"], bestFor:["高级开发者","系统架构","大型重构"], category:"CLI" },
+      { id:"copilot", name:"GitHub Copilot", company:"GitHub/Microsoft", icon:"🤖", desc:"最早的 AI 编程助手，深度集成 GitHub 生态。2026 年升级支持多模型切换和 Agent 模式。", pricing:"freemium", price:"$10/月 Individual · $39/月 Business", scores:{codeComplete:88,refactor:82,debug:80,multiLang:92,context:78,agent:75,speed:90,ecosystem:95}, tags:["VS Code","JetBrains","GitHub","多模型"], pros:["与 GitHub 生态深度整合","支持多 IDE（VS Code/JetBrains/Neovim）","多语言支持最广","价格亲民","企业级安全合规"], cons:["Agent 能力较弱","上下文窗口有限","建议质量不如 Cursor/Claude"], bestFor:["GitHub 重度用户","企业团队","多语言项目"], category:"插件" },
+      { id:"windsurf", name:"Windsurf", company:"Codeium", icon:"🏄", desc:"前身为 Codeium，2026 年重塑为 AI-native IDE。独特的 Cascade 流式交互和 Flows 多步编排。", pricing:"freemium", price:"$15/月 Pro · 免费版功能丰富", scores:{codeComplete:87,refactor:85,debug:83,multiLang:86,context:88,agent:82,speed:88,ecosystem:75}, tags:["IDE","Cascade","免费版强","Flows"], pros:["免费版功能最丰富","Cascade 流式交互体验好","Flows 多步任务编排","速度快延迟低","支持本地模型"], cons:["生态相比 Cursor 较弱","Agent 能力中等","社区规模较小"], bestFor:["预算有限","独立开发者","轻量项目"], category:"IDE" },
+      { id:"trae", name:"Trae", company:"字节跳动", icon:"🔷", desc:"字节跳动出品的免费 AI IDE，对标 Cursor，内置 Builder 模式支持自然语言生成整个项目。国内体验最优。", pricing:"free", price:"完全免费", scores:{codeComplete:85,refactor:80,debug:78,multiLang:82,context:85,agent:78,speed:92,ecosystem:70}, tags:["IDE","免费","国产","Builder模式"], pros:["完全免费无限制","Builder 模式生成整个项目","国内网络零延迟","中文理解能力强","VS Code 兼容插件"], cons:["海外模型支持有限","生态插件较少","社区刚起步"], bestFor:["国内开发者","学生","预算为零"], category:"IDE" },
+      { id:"aider", name:"Aider", company:"开源", icon:"🔧", desc:"最强开源 AI 编程 CLI 工具，支持几乎所有 LLM（OpenAI/Anthropic/Ollama/本地模型），Git-aware 的多文件编辑。", pricing:"free", price:"完全免费（需自备 API Key）", scores:{codeComplete:82,refactor:88,debug:85,multiLang:85,context:85,agent:80,speed:78,ecosystem:82}, tags:["CLI","开源","Git","多模型"], pros:["完全开源可自托管","支持几乎所有 LLM","Git-aware 自动 commit","Architect 模式大型重构","社区活跃更新快"], cons:["CLI 学习曲线","需自备 API Key","无 GUI"], bestFor:["开源爱好者","自托管需求","CLI 熟练者"], category:"CLI" },
+      { id:"cline", name:"Cline", company:"开源", icon:"🤝", desc:"VS Code 开源 AI Agent 插件，支持浏览器操作、终端命令、文件编辑的全自主 Agent。MCP 深度集成。", pricing:"free", price:"完全免费（需自备 API Key）", scores:{codeComplete:80,refactor:82,debug:80,multiLang:78,context:82,agent:88,speed:75,ecosystem:80}, tags:["VS Code","开源","Agent","MCP"], pros:["VS Code 原生插件","全自主 Agent（浏览器+终端+文件）","MCP 协议深度整合","支持人类审批工作流","社区贡献活跃"], cons:["偶尔 Agent 失控","需自备 API Key","速度中等"], bestFor:["VS Code 用户","Agent 爱好者","MCP 生态"], category:"插件" },
+      { id:"copilot-workspace", name:"Copilot Workspace", company:"GitHub/Microsoft", icon:"🏗️", desc:"GitHub 原生 AI 开发环境，从 Issue 到 PR 全流程 AI 辅助。2026 年进入 GA 阶段。", pricing:"paid", price:"包含在 Copilot 订阅中", scores:{codeComplete:78,refactor:80,debug:75,multiLang:80,context:82,agent:85,speed:82,ecosystem:90}, tags:["GitHub","全流程","Issue→PR","云端"], pros:["Issue → Plan → Code → PR 全流程","与 GitHub 深度整合","多文件协同编辑","内置预览和测试","企业级"], cons:["需要 Copilot 订阅","功能相对局限","不如 Cursor/Claude 灵活"], bestFor:["GitHub 工作流","团队协作","Issue驱动开发"], category:"平台" },
+      { id:"devin", name:"Devin", company:"Cognition", icon:"🧑‍💻", desc:"全球首个 AI 软件工程师，支持完全自主的端到端开发任务。2026 年企业版已商用。", pricing:"paid", price:"$500/月 Teams", scores:{codeComplete:82,refactor:78,debug:75,multiLang:75,context:80,agent:98,speed:70,ecosystem:65}, tags:["自主Agent","端到端","SWE","企业级"], pros:["完全自主执行开发任务","端到端交付（从需求到部署）","内置浏览器/终端/编辑器","支持 Slack 集成","企业级安全"], cons:["价格极高","自主性有时过度","生态封闭","速度较慢"], bestFor:["企业自动化","重复性任务","非技术团队"], category:"平台" },
+      { id:"v0", name:"v0", company:"Vercel", icon:"▲", desc:"Vercel 出品的 AI 全栈代码生成工具。输入自然语言，生成完整的 React/Next.js 应用，一键部署到 Vercel。", pricing:"freemium", price:"$20/月 Premium · 免费版有限额", scores:{codeComplete:85,refactor:70,debug:68,multiLang:60,context:75,agent:72,speed:95,ecosystem:78}, tags:["生成式","React","Next.js","Vercel"], pros:["自然语言生成完整应用","一键部署到 Vercel","UI 生成质量极高","适合快速原型","前端生态深度整合"], cons:["仅限前端/全栈 Web","重构能力弱","不适合非 Web 项目"], bestFor:["前端开发","快速原型","产品经理"], category:"生成式" },
+      { id:"bolt", name:"Bolt.new", company:"StackBlitz", icon:"⚡", desc:"浏览器内 AI 全栈开发环境，基于 WebContainers 技术。零安装，打开即写代码。", pricing:"freemium", price:"$20/月 Pro · 免费版可用", scores:{codeComplete:82,refactor:68,debug:65,multiLang:55,context:72,agent:70,speed:92,ecosystem:72}, tags:["浏览器","零安装","全栈","WebContainers"], pros:["零安装浏览器内开发","即时预览","快速原型最快","支持多框架","分享即部署"], cons:["复杂项目受限","不适合大型代码库","浏览器性能瓶颈"], bestFor:["快速验证","教学演示","移动端开发"], category:"生成式" },
+      { id:"openclaw", name:"OpenClaw", company:"OpenClaw", icon:"🦞", desc:"个人 AI Agent 平台，支持多 Agent 编排、技能系统、智能家居、定时任务。不只是编程——是你的 AI 生活操作系统。", pricing:"freemium", price:"免费自托管 · Pro 计划可选", scores:{codeComplete:78,refactor:80,debug:82,multiLang:75,context:88,agent:95,speed:80,ecosystem:85}, tags:["Agent平台","多Agent","技能系统","生活OS"], pros:["多 Agent 编排","技能系统可扩展","支持智能家居/日历/消息","定时任务自动化","完全可自托管"], cons:["编程不是唯一焦点","需要一定配置","学习曲线"], bestFor:["AI 生活方式","自动化爱好者","全栈 Agent"], category:"平台" },
+      { id:"continue", name:"Continue", company:"开源", icon:"🔄", desc:"开源 AI 编程助手，支持 VS Code 和 JetBrains，可接入任何 LLM。企业级可自托管。", pricing:"free", price:"完全免费开源", scores:{codeComplete:80,refactor:78,debug:76,multiLang:82,context:80,agent:72,speed:82,ecosystem:78}, tags:["开源","VS Code","JetBrains","自托管"], pros:["完全开源","支持 VS Code + JetBrains","任意 LLM 接入","企业级自托管","隐私优先"], cons:["Agent 能力中等","需自行配置模型","UI 不如 Cursor 精致"], bestFor:["企业自托管","隐私敏感","JetBrains 用户"], category:"插件" },
+      { id:"tongyi-lingma", name:"通义灵码", company:"阿里巴巴", icon:"🐎", desc:"阿里云出品的 AI 编程助手，支持 VS Code/JetBrains，中文编程体验最佳。企业版支持私有化部署。", pricing:"free", price:"个人免费 · 企业版定制", scores:{codeComplete:83,refactor:78,debug:76,multiLang:80,context:80,agent:72,speed:88,ecosystem:75}, tags:["国产","阿里云","中文优化","企业级"], pros:["个人完全免费","中文代码注释理解最佳","阿里云生态整合","企业级私有化部署","多 IDE 支持"], cons:["海外模型切换受限","Agent 能力待加强","国际化较弱"], bestFor:["国内企业","阿里云用户","中文开发者"], category:"插件" }
+    ];
+
+    const questions = [
+      { id:"role", title:"你的角色是？", desc:"这决定了工具复杂度和功能侧重", options:[
+        {value:"fullstack",icon:"🖥️",label:"全栈开发者",desc:"前后端都写"},
+        {value:"frontend",icon:"🎨",label:"前端开发者",desc:"专注 UI/UX"},
+        {value:"backend",icon:"⚙️",label:"后端开发者",desc:"API/系统/架构"},
+        {value:"student",icon:"📚",label:"学生/初学者",desc:"正在学习编程"},
+        {value:"pm",icon:"📋",label:"产品经理",desc:"不太写代码"},
+        {value:"devops",icon:"🔧",label:"DevOps/SRE",desc:"运维/部署/自动化"}
+      ]},
+      { id:"priority", title:"你最看重什么？", desc:"选择对你最重要的能力", options:[
+        {value:"speed",icon:"⚡",label:"速度",desc:"补全快、响应快"},
+        {value:"quality",icon:"💎",label:"代码质量",desc:"重构、最佳实践"},
+        {value:"agent",icon:"🤖",label:"Agent 能力",desc:"自主执行复杂任务"},
+        {value:"context",icon:"📖",label:"上下文理解",desc:"理解整个项目"},
+        {value:"ecosystem",icon:"🔌",label:"生态/集成",desc:"插件多、集成广"},
+        {value:"price",icon:"💰",label:"性价比",desc:"免费或便宜"}
+      ]},
+      { id:"env", title:"你的开发环境？", desc:"决定工具形态", options:[
+        {value:"vscode",icon:"💙",label:"VS Code",desc:"最流行的编辑器"},
+        {value:"jetbrains",icon:"🧠",label:"JetBrains",desc:"IntelliJ/PyCharm/WebStorm"},
+        {value:"terminal",icon:"🖤",label:"终端/CLI",desc:"命令行爱好者"},
+        {value:"browser",icon:"🌐",label:"浏览器",desc:"在线开发"},
+        {value:"any",icon:"🔀",label:"都可以",desc:"灵活切换"}
+      ]},
+      { id:"budget", title:"月预算多少？", desc:"含 AI 模型费用", options:[
+        {value:"free",icon:"🆓",label:"免费",desc:"一分钱不想花"},
+        {value:"low",icon:"💵",label:"≤$20/月",desc:"个人可承受"},
+        {value:"mid",icon:"💰",label:"$20-50/月",desc:"专业投资"},
+        {value:"high",icon:"💎",label:">$50/月",desc:"效率至上"}
+      ]},
+      { id:"team", title:"团队规模？", desc:"影响协作和安全需求", options:[
+        {value:"solo",icon:"🧑",label:"独立开发",desc:"一个人干"},
+        {value:"small",icon:"👥",label:"小团队 (2-10)",desc:"创业/小组"},
+        {value:"large",icon:"🏢",label:"大团队 (10+)",desc:"企业/部门"},
+        {value:"enterprise",icon:"🏛️",label:"企业级",desc:"安全合规优先"}
+      ]}
+    ];
+
+    let answers = {};
+    let currentStep = 0;
+    let currentMode = 'wizard';
+
+    function init() {
+      renderWizard();
+      bindModeToggle();
+    }
+
+    function bindModeToggle() {
+      document.getElementById('modeWizard').addEventListener('click', () => { switchMode('wizard'); });
+      document.getElementById('modeBrowse').addEventListener('click', () => { switchMode('browse'); });
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+      if (mode === 'wizard') {
+        document.getElementById('wizardView').style.display = '';
+        document.getElementById('browseView').style.display = 'none';
+      } else {
+        document.getElementById('wizardView').style.display = 'none';
+        document.getElementById('browseView').style.display = '';
+        renderBrowse();
+      }
+    }
+
+    function renderWizard() {
+      if (currentStep >= questions.length) { renderResults(); return; }
+      const q = questions[currentStep];
+      const selected = answers[q.id] || '';
+      let html = '<div class="wizard-progress">';
+      for (let i = 0; i < questions.length; i++) {
+        html += '<div class="wizard-step ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '') + '"></div>';
+      }
+      html += '</div><div class="wizard-question"><div class="wizard-q-title">' + q.title + '</div><div class="wizard-q-desc">' + q.desc + '</div><div class="wizard-options">';
+      q.options.forEach(o => {
+        html += '<div class="wizard-option ' + (selected === o.value ? 'selected' : '') + '" data-value="' + o.value + '"><div class="wizard-option-icon">' + o.icon + '</div><div class="wizard-option-label">' + o.label + '</div><div class="wizard-option-desc">' + o.desc + '</div></div>';
+      });
+      html += '</div><div class="wizard-nav">';
+      if (currentStep > 0) html += '<button class="wizard-btn wizard-btn-back" id="wizBack">← 上一步</button>';
+      else html += '<div></div>';
+      html += '<button class="wizard-btn wizard-btn-next" id="wizNext"' + (selected ? '' : ' disabled') + '>' + (currentStep === questions.length - 1 ? '🎯 查看推荐' : '下一步 →') + '</button>';
+      html += '</div></div>';
+      document.getElementById('wizard').innerHTML = html;
+      document.querySelectorAll('.wizard-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          answers[q.id] = opt.dataset.value;
+          document.querySelectorAll('.wizard-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+          document.getElementById('wizNext').disabled = false;
+        });
+      });
+      const nextBtn = document.getElementById('wizNext');
+      nextBtn.addEventListener('click', () => { if (answers[q.id]) { currentStep++; renderWizard(); } });
+      const backBtn = document.getElementById('wizBack');
+      if (backBtn) backBtn.addEventListener('click', () => { currentStep--; renderWizard(); });
+    }
+
+    function scoreColor(v) {
+      if (v >= 90) return 'var(--green)';
+      if (v >= 80) return 'var(--cyan)';
+      if (v >= 70) return 'var(--amber)';
+      return 'var(--red)';
+    }
+
+    function calculateMatch(tool) {
+      let score = 0;
+      const a = answers;
+      const s = tool.scores;
+      // Role matching
+      if (a.role === 'fullstack') score += (s.codeComplete + s.multiLang + s.agent) / 3;
+      else if (a.role === 'frontend') score += (s.speed + s.codeComplete) / 2 + (tool.category === '生成式' ? 10 : 0);
+      else if (a.role === 'backend') score += (s.refactor + s.debug + s.context) / 3;
+      else if (a.role === 'student') score += (s.speed + s.ecosystem) / 2 + (tool.pricing === 'free' ? 15 : 0);
+      else if (a.role === 'pm') score += (s.agent + s.speed) / 2 + (tool.category === '生成式' ? 15 : 0);
+      else if (a.role === 'devops') score += (s.agent + s.debug) / 2;
+      // Priority
+      if (a.priority === 'speed') score += s.speed * 0.5;
+      else if (a.priority === 'quality') score += (s.refactor + s.debug) * 0.25;
+      else if (a.priority === 'agent') score += s.agent * 0.5;
+      else if (a.priority === 'context') score += s.context * 0.5;
+      else if (a.priority === 'ecosystem') score += s.ecosystem * 0.5;
+      else if (a.priority === 'price') score += (tool.pricing === 'free' ? 50 : tool.pricing === 'freemium' ? 30 : 10);
+      // Environment
+      if (a.env === 'vscode' && (tool.category === 'IDE' || tool.category === '插件')) score += 15;
+      else if (a.env === 'jetbrains' && tool.tags.some(t => t.includes('JetBrains'))) score += 20;
+      else if (a.env === 'terminal' && tool.category === 'CLI') score += 25;
+      else if (a.env === 'browser' && (tool.category === '生成式' || tool.category === '平台')) score += 20;
+      else if (a.env === 'any') score += 10;
+      // Budget
+      if (a.budget === 'free' && tool.pricing === 'free') score += 20;
+      else if (a.budget === 'free' && tool.pricing === 'freemium') score += 10;
+      else if (a.budget === 'low' && tool.pricing !== 'paid') score += 15;
+      else if (a.budget === 'mid') score += 10;
+      else if (a.budget === 'high') score += 5 + s.agent * 0.1;
+      // Team
+      if (a.team === 'enterprise' && tool.tags.some(t => t.includes('企业级'))) score += 15;
+      else if (a.team === 'solo') score += 5;
+      return Math.round(score);
+    }
+
+    function renderResults() {
+      const ranked = tools.map(t => ({...t, matchScore: calculateMatch(t)})).sort((a, b) => b.matchScore - a.matchScore);
+      let html = '<div class="results"><div class="results-header"><h2>🎯 为你推荐的 AI 开发工具</h2><p>基于你的选择，这些工具最适合你</p></div>';
+      ranked.forEach((t, i) => {
+        const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const dims = ['codeComplete','refactor','debug','context','agent','speed'];
+        const dimLabels = {codeComplete:'补全',refactor:'重构',debug:'调试',context:'上下文',agent:'Agent',speed:'速度'};
+        html += '<div class="result-card"><div class="result-rank ' + rankClass + '">#' + (i+1) + '</div><div class="result-main"><div class="result-icon">' + t.icon + '</div><div class="result-info"><div class="result-name">' + t.name + '</div><div class="result-company">' + t.company + '</div><div class="result-desc">' + t.desc + '</div><div class="result-match">匹配度: ' + t.matchScore + ' 分</div><div class="result-price">💰 ' + t.price + '</div><div class="result-score">';
+        dims.forEach(d => {
+          const v = t.scores[d];
+          html += '<div class="score-item"><div class="score-bar-bg"><div class="score-bar" style="width:' + v + '%;background:' + scoreColor(v) + '"></div></div><div class="score-label">' + dimLabels[d] + '</div><div class="score-value">' + v + '</div></div>';
+        });
+        html += '</div><div class="result-tags">' + t.tags.map(tag => '<span class="result-tag">' + tag + '</span>').join('') + '</div></div></div></div>';
+      });
+      html += '<button class="restart-btn" id="restartBtn">🔄 重新选择</button></div>';
+      document.getElementById('wizard').innerHTML = html;
+      document.getElementById('restartBtn').addEventListener('click', () => {
+        answers = {}; currentStep = 0; renderWizard();
+      });
+    }
+
+    /* Browse Mode */
+    let browseCategory = 'all';
+    let browseSearch = '';
+    function renderBrowse() {
+      const cats = [...new Set(tools.map(t => t.category))];
+      let html = '<div class="browse-controls"><div class="browse-search"><input type="text" id="browseSearchInput" placeholder="搜索工具名称、公司、标签..." value="' + browseSearch + '" /></div><div class="filter-group"><button class="filter-btn ' + (browseCategory==='all'?'active':'') + '" data-cat="all">全部 (' + tools.length + ')</button>';
+      cats.forEach(c => {
+        const count = tools.filter(t => t.category === c).length;
+        html += '<button class="filter-btn ' + (browseCategory===c?'active':'') + '" data-cat="' + c + '">' + c + ' (' + count + ')</button>';
+      });
+      html += '</div></div>';
+      let filtered = tools.filter(t => {
+        if (browseCategory !== 'all' && t.category !== browseCategory) return false;
+        if (browseSearch) {
+          const q = browseSearch.toLowerCase();
+          return t.name.toLowerCase().includes(q) || t.company.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q) || t.tags.some(tag => tag.toLowerCase().includes(q));
+        }
+        return true;
+      });
+      if (filtered.length === 0) {
+        html += '<div class="no-results"><h3>🔍 未找到工具</h3><p>尝试调整搜索或筛选</p></div>';
+      } else {
+        html += '<div class="tools-grid">';
+        filtered.forEach(t => {
+          const dims = ['codeComplete','refactor','agent','speed'];
+          const dimLabels = {codeComplete:'补全',refactor:'重构',agent:'Agent',speed:'速度'};
+          const badgeClass = t.pricing === 'free' ? 'badge-free' : t.pricing === 'paid' ? 'badge-paid' : 'badge-freemium';
+          const badgeText = t.pricing === 'free' ? '免费' : t.pricing === 'paid' ? '付费' : '免费增值';
+          html += '<div class="tool-card" data-id="' + t.id + '"><div class="tool-header"><div class="tool-icon">' + t.icon + '</div><div><div class="tool-name">' + t.name + '</div><div style="font-size:12px;color:var(--text-dim)">' + t.company + '</div></div><span class="tool-badge ' + badgeClass + '">' + badgeText + '</span></div><div class="tool-desc">' + t.desc + '</div><div class="tool-scores">';
+          dims.forEach(d => {
+            const v = t.scores[d];
+            html += '<div class="mini-score">' + dimLabels[d] + ' <div class="mini-bar-bg"><div class="mini-bar" style="width:' + v + '%;background:' + scoreColor(v) + '"></div></div></div>';
+          });
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+      document.getElementById('browse').innerHTML = html;
+      document.getElementById('browseSearchInput').addEventListener('input', (e) => { browseSearch = e.target.value; renderBrowse(); });
+      document.querySelectorAll('.browse .filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => { browseCategory = btn.dataset.cat; renderBrowse(); });
+      });
+      document.querySelectorAll('.tool-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const tool = tools.find(t => t.id === card.dataset.id);
+          if (tool) showToolModal(tool);
+        });
+      });
+    }
+
+    function showToolModal(t) {
+      const overlay = document.getElementById('modalOverlay');
+      const modal = document.getElementById('modal');
+      const dims = ['codeComplete','refactor','debug','multiLang','context','agent','speed','ecosystem'];
+      const dimLabels = {codeComplete:'代码补全',refactor:'重构能力',debug:'调试辅助',multiLang:'多语
+言',context:'上下文',agent:'Agent',speed:'速度',ecosystem:'生态'};
+      const badgeClass = t.pricing === 'free' ? 'badge-free' : t.pricing === 'paid' ? 'badge-paid' : 'badge-freemium';
+      const badgeText = t.pricing === 'free' ? '免费' : t.pricing === 'paid' ? '付费' : '免费增值';
+      let html = '<button class="modal-close" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'show\')">✕</button>';
+      html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px"><div class="result-icon">' + t.icon + '</div><div><div class="modal-name">' + t.name + '</div><div class="modal-company">' + t.company + ' · <span class="tool-badge ' + badgeClass + '">' + badgeText + '</span></div></div></div>';
+      html += '<p style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:8px">' + t.desc + '</p>';
+      html += '<p style="font-size:13px;color:var(--amber)">💰 ' + t.price + '</p>';
+      html += '<div class="modal-section"><h4>能力评分</h4><div class="modal-scores">';
+      dims.forEach(d => {
+        const v = t.scores[d];
+        html += '<div class="modal-score-item"><span class="modal-score-label">' + dimLabels[d] + ' <strong>' + v + '</strong></span><div class="modal-score-bar-bg"><div class="modal-score-bar" style="width:' + v + '%;background:' + scoreColor(v) + '"></div></div></div>';
+      });
+      html += '</div></div>';
+      html += '<div class="modal-section"><h4>✅ 优势</h4><ul class="modal-list">' + t.pros.map(p => '<li>' + p + '</li>').join('') + '</ul></div>';
+      html += '<div class="modal-section"><h4>⚠️ 劣势</h4><ul class="modal-list">' + t.cons.map(c => '<li>' + c + '</li>').join('') + '</ul></div>';
+      html += '<div class="modal-section"><h4>🎯 最适合</h4><div class="result-tags">' + t.bestFor.map(b => '<span class="result-tag">' + b + '</span>').join('') + '</div></div>';
+      modal.innerHTML = html;
+      overlay.classList.add('show');
+    }
+
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') document.getElementById('modalOverlay').classList.remove('show');
+    });
+
+    init();
+  </script>
+</body>
+</html>
