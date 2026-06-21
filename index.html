@@ -376,8 +376,7 @@
       const overlay = document.getElementById('modalOverlay');
       const modal = document.getElementById('modal');
       const dims = ['codeComplete','refactor','debug','multiLang','context','agent','speed','ecosystem'];
-      const dimLabels = {codeComplete:'代码补全',refactor:'重构能力',debug:'调试辅助',multiLang:'多语
-言',context:'上下文',agent:'Agent',speed:'速度',ecosystem:'生态'};
+      const dimLabels = {codeComplete:'代码补全',refactor:'重构能力',debug:'调试辅助',multiLang:'多语言',context:'上下文',agent:'Agent',speed:'速度',ecosystem:'生态'};
       const badgeClass = t.pricing === 'free' ? 'badge-free' : t.pricing === 'paid' ? 'badge-paid' : 'badge-freemium';
       const badgeText = t.pricing === 'free' ? '免费' : t.pricing === 'paid' ? '付费' : '免费增值';
       let html = '<button class="modal-close" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'show\')">✕</button>';
